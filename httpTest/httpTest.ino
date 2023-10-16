@@ -1,7 +1,7 @@
 
 // Select your modem:
 #define TINY_GSM_MODEM_SIM7000
-// #define TINY_GSM_MODEM_SIM800
+//#define TINY_GSM_MODEM_SIM800
 //  #define TINY_GSM_MODEM_SIM808
 //  #define TINY_GSM_MODEM_SIM868
 //  #define TINY_GSM_MODEM_UBLOX
@@ -10,6 +10,15 @@
 //  #define TINY_GSM_MODEM_XBEE
 //  #define TINY_GSM_MODEM_SEQUANS_MONARCH
 
+#define uS_TO_S_FACTOR 1000000ULL // Conversion factor for micro seconds to seconds
+#define TIME_TO_SLEEP 60          // Time ESP32 will go to sleep (in seconds)
+
+#define UART_BAUD 115200
+#define PIN_DTR 25
+#define PIN_TX 27
+#define PIN_RX 26
+#define PWR_PIN 4
+#define LED_PIN 12
 // Set serial for debug console (to the Serial Monitor, default speed 115200)
 #define SerialMon Serial
 
@@ -88,7 +97,8 @@ TinyGsm modem(debugger);
 #else
 TinyGsm modem(SerialAT);
 #endif
-
+#include <StreamDebugger.h>
+StreamDebugger debugger(SerialAT, Serial);
 TinyGsmClientSecure client(modem);
 HttpClient http(client, server, port);
 
@@ -100,6 +110,14 @@ void setup()
 
   // !!!!!!!!!!!
   // Set your reset, enable, power pins here
+  // Set LED OFF
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, HIGH);
+
+  pinMode(PWR_PIN, OUTPUT);
+  digitalWrite(PWR_PIN, HIGH);
+  delay(300);
+  digitalWrite(PWR_PIN, LOW);
   // !!!!!!!!!!!
 
   SerialMon.println("Wait...");
@@ -112,8 +130,8 @@ void setup()
   // Restart takes quite some time
   // To skip it, call init() instead of restart()
   SerialMon.println("Initializing modem...");
-  modem.restart();
-  // modem.init();
+  // modem.restart();
+  modem.init();
 
   String modemInfo = modem.getModemInfo();
   SerialMon.print("Modem Info: ");
@@ -126,6 +144,7 @@ void setup()
     modem.simUnlock(GSM_PIN);
   }
 #endif
+  modem.enableGPS();
 }
 
 void loop()
@@ -238,7 +257,22 @@ void loop()
   modem.gprsDisconnect();
   SerialMon.println(F("GPRS disconnected"));
 #endif
-
+  modem.enableGPS();
+  float lat, lon;
+  while (1)
+  {
+    if (modem.getGPS(&lat, &lon))
+    {
+      Serial.printf("lat:%f lon:%f\n", lat, lon);
+      break;
+    }
+    else
+    {
+      Serial.print("getGPS ");
+      Serial.println(millis());
+    }
+    delay(2000);
+  }
   // Do nothing forevermore
   while (true)
   {
