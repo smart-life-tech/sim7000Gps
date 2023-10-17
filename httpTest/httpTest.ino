@@ -106,7 +106,8 @@ void setup()
 {
   // Set console baud rate
   SerialMon.begin(115200);
-  delay(10);
+  SerialMon.println("Wait...");
+  delay(1000);
 
   // !!!!!!!!!!!
   // Set your reset, enable, power pins here
