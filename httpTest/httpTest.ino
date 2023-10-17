@@ -108,7 +108,7 @@ void setup()
   SerialMon.begin(115200);
   SerialMon.println("Wait...");
   delay(1000);
-
+SerialMon.println("power on Wait...");
   // !!!!!!!!!!!
   // Set your reset, enable, power pins here
   // Turn on the modem
